@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TokenCraft: The LLM Token Master</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            },
+            cyber: {
+              dark: '#090d16',
+              card: '#131c2e',
+              border: '#1e293b',
+              accent: '#38bdf8',
+              glow: '#818cf8'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['Fira Code', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #080c14;
+      color: #f1f5f9;
+      user-select: none;
+      overflow-x: hidden;
+    }
+
+    /* Ambient Background Glow Spotlights */
+    .ambient-glow-1 {
+      position: fixed;
+      top: -10%;
+      left: 15%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .ambient-glow-2 {
+      position: fixed;
+      bottom: -10%;
+      right: 10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Glassmorphism Surface Styling */
+    .glass-card {
+      background: rgba(19, 28, 46, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    .glass-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    /* High-contrast Eye-Friendly Token Chips */
+    .token-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      margin: 0.2rem;
+      border-radius: 0.5rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      white-space: pre-wrap;
+      word-break: break-all;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .token-chip:hover {
+      transform: translateY(-3px) scale(1.08);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+      z-index: 30;
+    }
+
+    /* Vibrant Token Palette - High Contrast */
+    .token-c0 { background: linear-gradient(135deg, rgba(99, 102, 241, 0.28), rgba(99, 102, 241, 0.15)); border: 1px solid #818cf8; color: #e0e7ff; }
+    .token-c1 { background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(16, 185, 129, 0.15)); border: 1px solid #34d399; color: #ecfdf5; }
+    .token-c2 { background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(245, 158, 11, 0.15)); border: 1px solid #fbbf24; color: #fffbeb; }
+    .token-c3 { background: linear-gradient(135deg, rgba(236, 72, 153, 0.28), rgba(236, 72, 153, 0.15)); border: 1px solid #f472b6; color: #fdf2f8; }
+    .token-c4 { background: linear-gradient(135deg, rgba(14, 165, 233, 0.28), rgba(14, 165, 233, 0.15)); border: 1px solid #38bdf8; color: #f0f9ff; }
+    .token-c5 { background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(168, 85, 247, 0.15)); border: 1px solid #c084fc; color: #faf5ff; }
+
+    /* Arcade Card Hover FX */
+    .arcade-card {
+      position: relative;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .arcade-card:hover {
+      transform: translateY(-8px) scale(1.025);
+    }
+
+    /* Scanning Laser Effect */
+    @keyframes scanline {
+      0% { transform: translateY(-100%); opacity: 0.3; }
+      50% { opacity: 0.8; }
+      100% { transform: translateY(1000%); opacity: 0.3; }
+    }
+    .laser-scan {
+      animation: scanline 2.5s ease-in-out infinite;
+    }
+
+    /* Pulsing Glow Effect */
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.6)); }
+      50% { filter: drop-shadow(0 0 22px rgba(168, 85, 247, 0.8)); }
+    }
+    .pulse-glow-icon {
+      animation: pulseGlow 3s infinite;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #6366f1;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative">
+
+  <!-- Ambient Glow Background Canvas Layer -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Header Bar -->
+  <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchTab('games')">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-amber-500 border border-indigo-400/40 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition">
+          <i class="fa-solid fa-cubes-stacked pulse-glow-icon"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-base sm:text-lg text-white flex items-center gap-2 tracking-tight">
+            TokenCraft <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-mono font-semibold">LLM Arcade v2.5</span>
+          </h1>
+          <p class="text-[11px] text-slate-400 font-medium">Interactive Token Slicer & Memory Simulator</p>
+        </div>
+      </div>
+
+      <!-- Header Controls: Sound Toggle, Back to Arcade & XP Progress -->
+      <div class="flex items-center gap-3">
+        <!-- Audio Synthesizer Toggle -->
+        <button id="btn-sound-toggle" onclick="toggleAudio()" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-700/80 text-slate-300 hover:text-amber-400 flex items-center justify-center transition shadow cursor-pointer" title="Toggle Sound FX">
+          <i id="sound-icon" class="fa-solid fa-volume-high text-xs"></i>
+        </button>
+
+        <!-- Navigation Button -->
+        <button id="btn-back-dashboard" onclick="switchTab('games')" class="hidden px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition flex items-center gap-1.5 border border-indigo-400/40 hover:scale-105 cursor-pointer">
+          <i class="fa-solid fa-grid-2"></i>
+          <span>Arcade Dashboard</span>
+        </button>
+
+        <!-- Player XP Level Badge -->
+        <div class="bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-xl flex items-center gap-2.5 shadow-inner">
+          <div class="flex items-center gap-1 text-amber-400 font-bold text-xs">
+            <i class="fa-solid fa-trophy text-amber-400"></i>
+            <span id="player-level-title" class="font-mono text-[11px] text-amber-300">Lv. 1 Novice</span>
+          </div>
+          <div class="w-16 bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+            <div id="xp-progress-bar" class="h-full bg-gradient-to-r from-amber-500 to-indigo-500 transition-all duration-300" style="width: 20%;"></div>
+          </div>
+          <span id="user-xp" class="text-xs font-bold text-indigo-300 font-mono">100 XP</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full relative z-10 space-y-6">
+
+    <!-- MODULE 0: GAMES DASHBOARD -->
+    <section id="module-games" class="tab-content block space-y-6">
+      
+      <!-- Arcade Hero Visual Banner -->
+      <div class="relative overflow-hidden rounded-3xl border border-indigo-500/30 glass-card p-6 sm:p-8 shadow-2xl">
+        <canvas id="hero-bg-canvas" class="absolute inset-0 w-full h-full opacity-40 pointer-events-none"></canvas>
+        <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div class="space-y-2.5 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold font-mono tracking-wide uppercase">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Visual Playground & Mini-Games
+            </div>
+            <h2 class="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+              Master LLM Token Architecture <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-amber-300">Visually</span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+              Step inside the interactive Arcade! Explore how Large Language Models cut text into Byte-Pair Subwords, compare language token densities, handle context window limits, and optimize API pricing.
+            </p>
+          </div>
+
+          <!-- Hero Graphic Stats Tile -->
+          <div class="flex items-center gap-4 bg-slate-900/90 border border-slate-700/80 p-4 rounded-2xl backdrop-blur shadow-xl">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-amber-500/30">
+              <i class="fa-solid fa-gamepad"></i>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Arcade Challenge Hub</p>
+              <p class="text-base font-black text-white font-mono">5 Playable Simulations</p>
+              <p class="text-[11px] text-emerald-400 font-mono font-semibold flex items-center gap-1.5 mt-0.5">
+                <i class="fa-solid fa-sparkles text-amber-400"></i> High-Contrast & Eye Friendly
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- CARD 1: Tokenizer Slicer Lab -->
+        <div onclick="switchTab('lab')" class="arcade-card glass-card group cursor-pointer overflow-hidden rounded-2xl border-2 border-indigo-500/50 hover:border-indigo-400 flex flex-col justify-between min-h-[310px]">
+          <div class="relative h-44 bg-slate-950/80 overflow-hidden flex items-center justify-center border-b border-indigo-500/30">
+            <canvas id="thumb-canvas-lab" class="absolute inset-0 w-full h-full"></canvas>
+            <div class="absolute top-3 left-3 bg-slate-900/90 text-indigo-300 border border-indigo-500/40 text-[10px] font-bold font-mono px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
+              <i class="fa-solid fa-microscope text-amber-400"></i> Interactive Lab
+            </div>
+            <div class="absolute bottom-3 right-3 bg-slate-950/80 text-white border border-slate-700 px-2 py-0.5 rounded text-[10px] font-mono shadow flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> BPE Slicer
+            </div>
+          </div>
+
+          <div class="p-5 flex-grow flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="text-base sm:text-lg font-black text-white group-hover:text-indigo-300 transition">Tokenizer Slicer Lab</h3>
+                <i class="fa-solid fa-arrow-right text-indigo-400 group-hover:translate-x-1.5 transition"></i>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Watch raw text get cut into byte slices and Byte-Pair Encoding subwords in real-time with visual color highlighting.
+              </p>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+              <span class="text-[11px] font-mono text-indigo-400 font-semibold">Subword BPE Visualizer</span>
+              <button class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                Play Lab <i class="fa-solid fa-play text-[9px]"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2: EN vs ZH Slicer -->
+        <div onclick="switchTab('comparison')" class="arcade-card glass-card group cursor-pointer overflow-hidden rounded-2xl border-2 border-emerald-500/50 hover:border-emerald-400 flex flex-col justify-between min-h-[310px]">
+          <div class="relative h-44 bg-slate-950/80 overflow-hidden flex items-center justify-center border-b border-emerald-500/30">
+            <canvas id="thumb-canvas-cmp" class="absolute inset-0 w-full h-full"></canvas>
+            <div class="absolute top-3 left-3 bg-slate-900/90 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold font-mono px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
+              <i class="fa-solid fa-language text-emerald-400"></i> Multilingual
+            </div>
+            <div class="absolute bottom-3 right-3 bg-slate-950/80 text-white border border-slate-700 px-2 py-0.5 rounded text-[10px] font-mono shadow">
+              1 Tok = 4 Chars vs 1 Tok = 1 Char
+            </div>
+          </div>
+
+          <div class="p-5 flex-grow flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="text-base sm:text-lg font-black text-white group-hover:text-emerald-300 transition">EN vs ZH Efficiency</h3>
+                <i class="fa-solid fa-arrow-right text-emerald-400 group-hover:translate-x-1.5 transition"></i>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Compare token density between English letters and Chinese characters to see why non-English prompts cost more.
+              </p>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+              <span class="text-[11px] font-mono text-emerald-400 font-semibold">Byte Density Visualizer</span>
+              <button class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                Compare <i class="fa-solid fa-play text-[9px]"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 3: Context Memory Overflow Survival -->
+        <div onclick="switchTab('context')" class="arcade-card glass-card group cursor-pointer overflow-hidden rounded-2xl border-2 border-amber-500/50 hover:border-amber-400 flex flex-col justify-between min-h-[310px]">
+          <div class="relative h-44 bg-slate-950/80 overflow-hidden flex items-center justify-center border-b border-amber-500/30">
+            <canvas id="thumb-canvas-ctx" class="absolute inset-0 w-full h-full"></canvas>
+            <div class="absolute top-3 left-3 bg-slate-900/90 text-amber-300 border border-amber-500/40 text-[10px] font-bold font-mono px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
+              <i class="fa-solid fa-fire text-amber-400"></i> Survival Game
+            </div>
+            <div class="absolute bottom-3 right-3 bg-slate-950/80 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] font-mono shadow">
+              2,000 Tok Max Buffer
+            </div>
+          </div>
+
+          <div class="p-5 flex-grow flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="text-base sm:text-lg font-black text-white group-hover:text-amber-300 transition">Context Window Survival</h3>
+                <i class="fa-solid fa-arrow-right text-amber-400 group-hover:translate-x-1.5 transition"></i>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Prevent memory overflow crashes! Use RAG, Truncation, and Summarization power-ups to survive 10 rounds.
+              </p>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+              <span class="text-[11px] font-mono text-amber-400 font-semibold">Memory Buffer Challenge</span>
+              <button class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                Start Game <i class="fa-solid fa-play text-[9px]"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 4: API Cost Simulator -->
+        <div onclick="switchTab('cost')" class="arcade-card glass-card group cursor-pointer overflow-hidden rounded-2xl border-2 border-purple-500/50 hover:border-purple-400 flex flex-col justify-between min-h-[310px]">
+          <div class="relative h-44 bg-slate-950/80 overflow-hidden flex items-center justify-center border-b border-purple-500/30">
+            <canvas id="thumb-canvas-cost" class="absolute inset-0 w-full h-full"></canvas>
+            <div class="absolute top-3 left-3 bg-slate-900/90 text-purple-300 border border-purple-500/40 text-[10px] font-bold font-mono px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
+              <i class="fa-solid fa-calculator text-purple-300"></i> Strategy
+            </div>
+            <div class="absolute bottom-3 right-3 bg-slate-950/80 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded text-[10px] font-mono shadow">
+              Target: &le; $150/mo
+            </div>
+          </div>
+
+          <div class="p-5 flex-grow flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="text-base sm:text-lg font-black text-white group-hover:text-purple-300 transition">API Cost & Latency Simulator</h3>
+                <i class="fa-solid fa-arrow-right text-purple-400 group-hover:translate-x-1.5 transition"></i>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Design model tiers, prompt caching, and request volumes to hit your monthly AI architecture budget.
+              </p>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+              <span class="text-[11px] font-mono text-purple-400 font-semibold">Token Billing Engine</span>
+              <button class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                Simulate <i class="fa-solid fa-play text-[9px]"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 5: Certification Quiz -->
+        <div onclick="switchTab('quiz')" class="arcade-card glass-card group cursor-pointer overflow-hidden rounded-2xl border-2 border-sky-500/50 hover:border-sky-400 flex flex-col justify-between min-h-[310px]">
+          <div class="relative h-44 bg-slate-950/80 overflow-hidden flex items-center justify-center border-b border-sky-500/30">
+            <canvas id="thumb-canvas-quiz" class="absolute inset-0 w-full h-full"></canvas>
+            <div class="absolute top-3 left-3 bg-slate-900/90 text-sky-300 border border-sky-500/40 text-[10px] font-bold font-mono px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
+              <i class="fa-solid fa-award text-amber-300"></i> Certification
+            </div>
+            <div class="absolute bottom-3 right-3 bg-slate-950/80 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] font-mono shadow">
+              +150 XP Reward
+            </div>
+          </div>
+
+          <div class="p-5 flex-grow flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <h3 class="text-base sm:text-lg font-black text-white group-hover:text-sky-300 transition">Token Master Certification</h3>
+                <i class="fa-solid fa-arrow-right text-sky-400 group-hover:translate-x-1.5 transition"></i>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Test your knowledge on Byte-Pair Encoding, token boundaries, and context limits to earn XP points!
+              </p>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+              <span class="text-[11px] font-mono text-sky-400 font-semibold">Knowledge Certification</span>
+              <button class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                Take Quiz <i class="fa-solid fa-play text-[9px]"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 6: Architectural Guide Reference -->
+        <div onclick="showModal('LLM Subword Architecture Map', 'Educational Guide', 'Modern tokenizers map text fragments into numerical ID matrices before feeding them into Transformer neural layers. Subword algorithms balance vocabulary size with sequence length.')" 
+          class="arcade-card glass-card group cursor-pointer overflow-hidden rounded-2xl border border-slate-800 hover:border-slate-700 flex flex-col justify-between min-h-[310px]">
+          <div class="relative h-44 bg-slate-950/90 overflow-hidden flex items-center justify-center p-4">
+            <div class="w-full h-full border border-dashed border-slate-800 rounded-xl p-3 flex flex-col justify-around text-xs font-mono text-slate-400">
+              <div class="flex justify-between items-center bg-slate-900/90 px-3 py-1.5 rounded-lg border border-slate-800">
+                <span class="text-indigo-400">&quot;Tokenization&quot;</span>
+                <i class="fa-solid fa-arrow-right text-slate-600 text-[10px]"></i>
+                <span class="text-emerald-400">[&quot;Token&quot;, &quot;ization&quot;]</span>
+              </div>
+              <div class="flex justify-between items-center bg-slate-900/90 px-3 py-1.5 rounded-lg border border-slate-800">
+                <span class="text-emerald-400">[&quot;Token&quot;, &quot;ization&quot;]</span>
+                <i class="fa-solid fa-arrow-right text-slate-600 text-[10px]"></i>
+                <span class="text-amber-400">[30241, 1420]</span>
+              </div>
+            </div>
+          </div>
+          <div class="p-5 flex-grow flex flex-col justify-between space-y-2">
+            <div>
+              <h3 class="text-base font-bold text-white group-hover:text-indigo-300 transition">How BPE Tokenization Works</h3>
+              <p class="text-xs text-slate-400 mt-1">Discover how raw text converts into numerical matrix embeddings.</p>
+            </div>
+            <span class="text-xs font-mono text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-book-open text-indigo-400"></i> Read Concept Guide
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- MODULE 1: TOKENIZER SLICER LAB -->
+    <section id="module-lab" class="tab-content hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <button onclick="switchTab('games')" class="text-xs text-slate-300 hover:text-white transition flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 px-3.5 py-2 rounded-xl font-medium shadow">
+          <i class="fa-solid fa-arrow-left text-indigo-400"></i> Back to Dashboard
+        </button>
+      </div>
+
+      <!-- Concept Explanation Card -->
+      <div class="glass-card rounded-2xl p-5 border border-indigo-500/30 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Concept #1</span>
+            <h2 class="text-xl font-black text-white">What is an LLM Token?</h2>
+            <p class="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
+              A <b>Token</b> is the atomic slice of text an AI processes. It is <b>not</b> strictly a whole word—it can be a subword fragment, whitespace, punctuation, or individual byte depending on vocabulary rules!
+            </p>
+          </div>
+          <div class="flex items-center gap-2 bg-slate-950/80 px-4 py-3 rounded-xl border border-slate-800 text-xs font-mono text-indigo-300 shadow">
+            <span>Text</span> <i class="fa-solid fa-chevron-right text-slate-600"></i>
+            <span class="text-amber-400 font-bold">Subword Tokens</span> <i class="fa-solid fa-chevron-right text-slate-600"></i>
+            <span class="text-emerald-400">Token IDs</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Slicer Area -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Input & Visual Container -->
+        <div class="lg:col-span-2 space-y-4">
+          <div class="glass-card rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <label for="lab-input" class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-pen-to-square text-indigo-400"></i> Input Custom Prompt:
+              </label>
+              <div class="flex gap-2 text-xs">
+                <button onclick="setSampleText('simple')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition">Sample 1</button>
+                <button onclick="setSampleText('code')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition">Sample 2: Code</button>
+                <button onclick="setSampleText('multilingual')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition">Sample 3: EN+ZH</button>
+              </div>
+            </div>
+
+            <textarea id="lab-input" rows="4" 
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3.5 text-slate-100 font-mono text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-inner resize-none"
+              placeholder="Type or paste any text here to see how AI tokenizes it..."
+              oninput="processLabText()">I love AI! Understanding tokens is super easy with TokenCraft.</textarea>
+
+            <!-- Visual Slicing Output Display -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <i class="fa-solid fa-puzzle-piece text-amber-400"></i> Live Token Slices (Hover to Inspect)
+                </span>
+                <span id="lab-token-count-badge" class="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-0.5 rounded-full font-mono font-bold">0 Tokens</span>
+              </div>
+              <div id="token-visualization-container" class="min-h-[140px] max-h-[240px] overflow-y-auto bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex flex-wrap items-start content-start relative">
+                <!-- Dynamic Chips -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Token Analysis Metrics -->
+        <div class="space-y-4">
+          <div class="glass-card rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+              <i class="fa-solid fa-chart-pie text-indigo-400"></i> Token Slicer Metrics
+            </h3>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <p class="text-[11px] text-slate-400">Total Tokens</p>
+                <p id="metric-tokens" class="text-2xl font-bold text-indigo-400 font-mono">0</p>
+              </div>
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <p class="text-[11px] text-slate-400">Total Characters</p>
+                <p id="metric-chars" class="text-2xl font-bold text-emerald-400 font-mono">0</p>
+              </div>
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <p class="text-[11px] text-slate-400">Chars per Token</p>
+                <p id="metric-ratio" class="text-2xl font-bold text-amber-400 font-mono">0.0</p>
+              </div>
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <p class="text-[11px] text-slate-400">Est. API Cost ($)</p>
+                <p id="metric-cost" class="text-2xl font-bold text-sky-400 font-mono">$0.000</p>
+              </div>
+            </div>
+
+            <!-- Tokenizer Insights -->
+            <div class="bg-indigo-950/30 border border-indigo-500/20 rounded-xl p-3.5 space-y-2 text-xs text-slate-300">
+              <p class="font-bold text-indigo-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-info"></i> How BPE Slices Work:
+              </p>
+              <ul class="space-y-1 list-disc list-inside text-slate-400">
+                <li>Leading spaces attach to preceding words (<code class="text-indigo-300 bg-slate-900 px-1 rounded">_love</code>).</li>
+                <li>Common English words usually equal 1 single token.</li>
+                <li>Rare words split into <b>subwords</b> ("Tokenization" &rarr; "Token" + "ization").</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 2: MULTILINGUAL COMPARISON -->
+    <section id="module-comparison" class="tab-content hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <button onclick="switchTab('games')" class="text-xs text-slate-300 hover:text-white transition flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 px-3.5 py-2 rounded-xl font-medium shadow">
+          <i class="fa-solid fa-arrow-left text-emerald-400"></i> Back to Dashboard
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl p-5 border border-emerald-500/30 shadow-xl">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Concept #2</span>
+        <h2 class="text-xl font-black text-white mt-1">English vs Chinese Token Density</h2>
+        <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
+          In English, <b>1 Token &approx; 3.5 to 4 characters (~0.75 words)</b>. In Chinese, <b>1 character often uses 1 to 2 tokens</b> due to vocabulary frequency weight distribution in Byte-Pair Encoding!
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- English Side -->
+        <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4 shadow-xl">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <h3 class="font-bold text-indigo-300 flex items-center gap-2 text-sm">
+              <i class="fa-solid fa-earth-americas"></i> English Tokenization
+            </h3>
+            <span class="text-[11px] px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono">High Efficiency (~3.8 Chars/Tok)</span>
+          </div>
+
+          <textarea id="en-cmp-input" rows="3" oninput="runComparison()"
+            class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 font-mono focus:outline-none focus:border-indigo-500">Hello world, large language models are fascinating technology!</textarea>
+
+          <div id="en-cmp-output" class="min-h-[90px] max-h-[170px] overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap content-start"></div>
+
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-around text-center text-xs font-mono">
+            <div>
+              <span class="text-slate-400 block">Chars</span>
+              <span id="en-char-val" class="text-base font-bold text-white">0</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Tokens</span>
+              <span id="en-token-val" class="text-base font-bold text-indigo-400">0</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Efficiency</span>
+              <span id="en-eff-val" class="text-base font-bold text-emerald-400">0.0 c/t</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chinese Side -->
+        <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4 shadow-xl">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <h3 class="font-bold text-emerald-300 flex items-center gap-2 text-sm">
+              <i class="fa-solid fa-language"></i> Chinese Tokenization (中文)
+            </h3>
+            <span class="text-[11px] px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">Variable Density (~1 Char/Tok)</span>
+          </div>
+
+          <textarea id="zh-cmp-input" rows="3" oninput="runComparison()"
+            class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 font-mono focus:outline-none focus:border-emerald-500">你好世界，大型語言模型是令人驚歎的現代科技！</textarea>
+
+          <div id="zh-cmp-output" class="min-h-[90px] max-h-[170px] overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap content-start"></div>
+
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-around text-center text-xs font-mono">
+            <div>
+              <span class="text-slate-400 block">Chars</span>
+              <span id="zh-char-val" class="text-base font-bold text-white">0</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Tokens</span>
+              <span id="zh-token-val" class="text-base font-bold text-emerald-400">0</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Efficiency</span>
+              <span id="zh-eff-val" class="text-base font-bold text-amber-400">0.0 c/t</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 3: CONTEXT SURVIVAL GAME -->
+    <section id="module-context" class="tab-content hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <button onclick="switchTab('games')" class="text-xs text-slate-300 hover:text-white transition flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 px-3.5 py-2 rounded-xl font-medium shadow">
+          <i class="fa-solid fa-arrow-left text-amber-400"></i> Back to Dashboard
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl p-5 border border-amber-500/30 shadow-xl">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">Concept #3 & Interactive Survival Game</span>
+            <h2 class="text-xl font-black text-white mt-0.5">Context Memory Overflow Survival</h2>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1">
+              AI models have a maximum <b>Context Window Limit</b> in tokens. Prevent buffer crashes over 10 turns using RAG, Truncation, and Summarization!
+            </p>
+          </div>
+          <button onclick="resetContextGame()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow transition">
+            <i class="fa-solid fa-rotate-left"></i> Reset Simulation
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+          <div class="glass-card rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
+            <!-- Capacity Reservoir -->
+            <div>
+              <div class="flex justify-between items-center text-xs font-mono mb-1.5">
+                <span class="text-slate-300 font-bold flex items-center gap-2">
+                  <i class="fa-solid fa-memory text-amber-400"></i> Context Memory Reservoir:
+                </span>
+                <span id="ctx-used-text" class="text-amber-400 font-bold">1,200 / 2,000 Tokens (60%)</span>
+              </div>
+              <div class="w-full bg-slate-950 h-5 rounded-full border border-slate-800 p-0.5 overflow-hidden shadow-inner">
+                <div id="ctx-progress-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500 transition-all duration-300" style="width: 60%;"></div>
+              </div>
+            </div>
+
+            <!-- Memory Buffer Log List -->
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Conversation Memory Stream</h4>
+                <span id="ctx-round-counter" class="text-xs text-amber-400 font-mono font-bold">Round 1 / 10</span>
+              </div>
+              <div id="ctx-memory-list" class="min-h-[190px] max-h-[260px] overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2 font-mono text-xs">
+                <!-- Log entries -->
+              </div>
+            </div>
+
+            <!-- Actions Grid -->
+            <div class="space-y-2">
+              <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Choose Memory Power-Up:</h4>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <button onclick="applyContextAction('summarize')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-indigo-500/30 rounded-xl text-left transition group shadow">
+                  <span class="block text-xs font-bold text-indigo-300 group-hover:text-indigo-200">Summarize</span>
+                  <span class="text-[10px] text-slate-400">-500 Tokens</span>
+                </button>
+                <button onclick="applyContextAction('truncate')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-amber-500/30 rounded-xl text-left transition group shadow">
+                  <span class="block text-xs font-bold text-amber-300 group-hover:text-amber-200">Truncate</span>
+                  <span class="text-[10px] text-slate-400">-300 Tokens</span>
+                </button>
+                <button onclick="applyContextAction('rag')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 rounded-xl text-left transition group shadow">
+                  <span class="block text-xs font-bold text-emerald-300 group-hover:text-emerald-200">RAG Chunk</span>
+                  <span class="text-[10px] text-slate-400">-400 Tokens</span>
+                </button>
+                <button onclick="applyContextAction('next')" class="p-3 bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 rounded-xl text-left transition text-white shadow-lg">
+                  <span class="block text-xs font-bold">Next Query &rarr;</span>
+                  <span class="text-[10px] text-indigo-200">+Incoming data</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="glass-card rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+              <i class="fa-solid fa-shield-halved text-amber-400"></i> Survival Status
+            </h3>
+            <div class="space-y-3 font-mono text-xs">
+              <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span class="text-slate-400">Turns Survived:</span>
+                <span id="ctx-score-turns" class="text-amber-400 font-bold text-sm">0</span>
+              </div>
+              <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <span class="text-slate-400">Buffer Status:</span>
+                <span id="ctx-score-status" class="text-emerald-400 font-bold text-sm">SAFE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 4: API COST SIMULATOR -->
+    <section id="module-cost" class="tab-content hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <button onclick="switchTab('games')" class="text-xs text-slate-300 hover:text-white transition flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 px-3.5 py-2 rounded-xl font-medium shadow">
+          <i class="fa-solid fa-arrow-left text-purple-400"></i> Back to Dashboard
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl p-5 border border-purple-500/30 shadow-xl">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <span class="text-xs font-bold text-purple-400 uppercase tracking-wider">Concept #4 & Architectural Optimization</span>
+            <h2 class="text-xl font-black text-white mt-0.5">API Pricing & Cost Simulator</h2>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1">
+              LLMs bill per 1M Tokens. Balance model capability and context caching to keep monthly costs under <b>$150/month</b>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+          <div class="glass-card rounded-2xl p-5 border border-slate-800 shadow-xl space-y-5">
+            <!-- Tier Choice -->
+            <div>
+              <label class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">1. Select Model Tier:</label>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button onclick="selectCostModel('flagship')" id="btn-model-flagship" class="cost-model-btn p-3 bg-slate-950 border-2 border-indigo-500 rounded-xl text-left transition shadow">
+                  <span class="block text-xs font-bold text-white">GPT-4o Flagship</span>
+                  <span class="text-[10px] text-slate-400">$2.50 / $10.00 per M</span>
+                </button>
+                <button onclick="selectCostModel('balanced')" id="btn-model-balanced" class="cost-model-btn p-3 bg-slate-950 border border-slate-800 rounded-xl text-left transition shadow">
+                  <span class="block text-xs font-bold text-white">Claude Sonnet</span>
+                  <span class="text-[10px] text-slate-400">$3.00 / $15.00 per M</span>
+                </button>
+                <button onclick="selectCostModel('fast')" id="btn-model-fast" class="cost-model-btn p-3 bg-slate-950 border border-slate-800 rounded-xl text-left transition shadow">
+                  <span class="block text-xs font-bold text-white">Gemini Flash</span>
+                  <span class="text-[10px] text-amber-400">$0.075 / $0.30 per M</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Strategy Choice -->
+            <div>
+              <label class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">2. Context Strategy:</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button onclick="selectCostStrategy('raw')" id="btn-strat-raw" class="cost-strat-btn p-3 bg-slate-950 border-2 border-indigo-500 rounded-xl text-left transition shadow">
+                  <span class="block text-xs font-bold text-white">Raw Full History</span>
+                  <span class="text-[10px] text-slate-400">4,000 tokens/req</span>
+                </button>
+                <button onclick="selectCostStrategy('rag')" id="btn-strat-rag" class="cost-strat-btn p-3 bg-slate-950 border border-slate-800 rounded-xl text-left transition shadow">
+                  <span class="block text-xs font-bold text-white">RAG + Prompt Caching</span>
+                  <span class="text-[10px] text-emerald-400">800 tokens/req</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Volume Slider -->
+            <div>
+              <div class="flex justify-between text-xs font-bold text-slate-300 mb-1.5">
+                <span>3. Monthly Requests Volume:</span>
+                <span id="cost-vol-text" class="text-purple-400 font-mono">100,000 reqs/mo</span>
+              </div>
+              <input type="range" id="cost-vol-slider" min="10000" max="1000000" step="10000" value="100000" 
+                oninput="calculateCostMetrics()" class="w-full accent-purple-500 bg-slate-950 h-2 rounded-lg cursor-pointer">
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="glass-card rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+              <i class="fa-solid fa-calculator text-purple-400"></i> Monthly Billing Breakdown
+            </h3>
+            <div class="space-y-3">
+              <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center">
+                <span class="text-xs text-slate-400">Monthly Total:</span>
+                <span id="cost-total-val" class="text-2xl font-bold font-mono text-purple-400">$0.00</span>
+              </div>
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs font-mono">
+                <span class="text-slate-400">Budget Status:</span>
+                <span id="cost-status-badge" class="px-2.5 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-300">PASSED</span>
+              </div>
+            </div>
+
+            <button onclick="claimCostReward()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-check"></i> Submit Solution (+50 XP)
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 5: CERTIFICATION QUIZ -->
+    <section id="module-quiz" class="tab-content hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <button onclick="switchTab('games')" class="text-xs text-slate-300 hover:text-white transition flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 px-3.5 py-2 rounded-xl font-medium shadow">
+          <i class="fa-solid fa-arrow-left text-sky-400"></i> Back to Dashboard
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl p-5 border border-sky-500/30 shadow-xl">
+        <span class="text-xs font-bold text-sky-400 uppercase tracking-wider">Concept Certification</span>
+        <h2 class="text-xl font-black text-white mt-0.5">Token Master Knowledge Quiz</h2>
+        <p class="text-xs sm:text-sm text-slate-300 mt-1">
+          Answer 5 questions about subwords, English vs Chinese efficiency, and context limits to earn +150 XP!
+        </p>
+      </div>
+
+      <div class="max-w-3xl mx-auto glass-card border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+          <span id="quiz-question-num" class="text-xs font-bold text-sky-400 uppercase font-mono">Question 1 of 5</span>
+          <span id="quiz-score-display" class="text-xs font-mono text-slate-300">Score: <span class="text-amber-400 font-bold">0 / 5</span></span>
+        </div>
+
+        <div class="space-y-2">
+          <h3 id="quiz-title" class="text-base sm:text-lg font-bold text-white">Loading question...</h3>
+        </div>
+
+        <div id="quiz-options-container" class="space-y-3">
+          <!-- Quiz options -->
+        </div>
+
+        <div id="quiz-feedback-box" class="hidden p-4 rounded-xl text-xs space-y-1"></div>
+
+        <div class="flex justify-end pt-2">
+          <button onclick="nextQuizQuestion()" id="btn-quiz-next" class="hidden px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow transition">
+            Next Question &rarr;
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 py-5 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 space-y-1.5">
+      <p class="flex items-center justify-center gap-2">
+        <i class="fa-solid fa-cubes-stacked text-indigo-400"></i> <b>TokenCraft Arcades</b> — LLM Core Token Slicer & Memory Lab
+      </p>
+      <p class="text-[11px] text-slate-600">Built for AI Developers, Engineers, and Learners.</p>
+    </div>
+  </footer>
+
+  <!-- Modal Dialog -->
+  <div id="game-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-3">
+        <div id="modal-icon" class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl font-bold border border-amber-500/30">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <div>
+          <h3 id="modal-title" class="font-bold text-white text-base">Achievement Unlocked!</h3>
+          <p id="modal-subtitle" class="text-xs text-slate-400">TokenCraft Progress</p>
+        </div>
+      </div>
+      <p id="modal-body" class="text-xs text-slate-300 leading-relaxed">Modal content text goes here...</p>
+      <button onclick="closeModal()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition shadow-lg">
+        Continue
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let userXP = 100;
+    let audioMuted = false;
+    let currentTab = 'games';
+
+    // Web Audio Synthesizer
+    function playAudioTone(freq, type = 'sine', duration = 0.15) {
+      if (audioMuted) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function toggleAudio() {
+      audioMuted = !audioMuted;
+      const icon = document.getElementById('sound-icon');
+      if (audioMuted) {
+        icon.className = 'fa-solid fa-volume-xmark text-slate-500';
+      } else {
+        icon.className = 'fa-solid fa-volume-high text-amber-400';
+        playAudioTone(600, 'sine', 0.1);
+      }
+    }
+
+    function switchTab(tabId) {
+      playAudioTone(520, 'sine', 0.1);
+      currentTab = tabId;
+
+      const backBtn = document.getElementById('btn-back-dashboard');
+      if (backBtn) {
+        if (tabId === 'games') {
+          backBtn.classList.add('hidden');
+        } else {
+          backBtn.classList.remove('hidden');
+        }
+      }
+
+      document.querySelectorAll('.tab-content').forEach(sec => sec.classList.add('hidden'));
+
+      const targetModule = document.getElementById(`module-${tabId}`);
+      if (targetModule) {
+        targetModule.classList.remove('hidden');
+      }
+
+      if (tabId === 'lab') processLabText();
+      if (tabId === 'comparison') runComparison();
+      if (tabId === 'context' && !ctxGameInitialized) initContextGame();
+      if (tabId === 'cost') calculateCostMetrics();
+      if (tabId === 'quiz' && quizCurrentIndex === 0) renderQuizQuestion();
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function addXP(amount, reason) {
+      userXP += amount;
+      document.getElementById('user-xp').innerText = `${userXP} XP`;
+      
+      // Update Level Titles
+      const levelTitle = document.getElementById('player-level-title');
+      const progress = document.getElementById('xp-progress-bar');
+
+      if (userXP >= 400) {
+        levelTitle.innerText = "Lv. 4 LLM Master";
+        progress.style.width = "100%";
+      } else if (userXP >= 250) {
+        levelTitle.innerText = "Lv. 3 Architect";
+        progress.style.width = "75%";
+      } else if (userXP >= 150) {
+        levelTitle.innerText = "Lv. 2 Alchemist";
+        progress.style.width = "50%";
+      } else {
+        levelTitle.innerText = "Lv. 1 Novice";
+        progress.style.width = "25%";
+      }
+
+      playAudioTone(880, 'triangle', 0.25);
+      showModal("XP Earned! +" + amount + " XP", "Great Progress!", reason);
+    }
+
+    function showModal(title, subtitle, body) {
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-subtitle').innerText = subtitle;
+      document.getElementById('modal-body').innerText = body;
+      document.getElementById('game-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('game-modal').classList.add('hidden');
+    }
+
+    function renderCardThumbnails() {
+      // 1. Hero Canvas Particles
+      const heroCanvas = document.getElementById('hero-bg-canvas');
+      if (heroCanvas) {
+        const ctx = heroCanvas.getContext('2d');
+        heroCanvas.width = heroCanvas.offsetWidth || 800;
+        heroCanvas.height = heroCanvas.offsetHeight || 200;
+        
+        let particles = Array.from({ length: 35 }, () => ({
+          x: Math.random() * heroCanvas.width,
+          y: Math.random() * heroCanvas.height,
+          size: Math.random() * 3 + 1,
+          speedX: (Math.random() - 0.5) * 0.8,
+          speedY: (Math.random() - 0.5) * 0.8,
+          color: ['#6366f1', '#a855f7', '#38bdf8', '#fbbf24'][Math.floor(Math.random() * 4)]
+        }));
+
+        function animHero() {
+          if (currentTab !== 'games') return requestAnimationFrame(animHero);
+          ctx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+          particles.forEach(p => {
+            p.x += p.speedX; p.y += p.speedY;
+            if (p.x < 0 || p.x > heroCanvas.width) p.speedX *= -1;
+            if (p.y < 0 || p.y > heroCanvas.height) p.speedY *= -1;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+          });
+          requestAnimationFrame(animHero);
+        }
+        animHero();
+      }
+
+      // 2. Token Slicer Visual Thumbnail
+      const labCanvas = document.getElementById('thumb-canvas-lab');
+      if (labCanvas) {
+        const ctx = labCanvas.getContext('2d');
+        labCanvas.width = labCanvas.offsetWidth || 300;
+        labCanvas.height = labCanvas.offsetHeight || 180;
+        let laserX = 0;
+
+        function animLab() {
+          if (currentTab !== 'games') return requestAnimationFrame(animLab);
+          ctx.clearRect(0, 0, labCanvas.width, labCanvas.height);
+
+          const tokens = [
+            { t: "I", c: "#6366f1", x: 20, y: 70, w: 32 },
+            { t: "love", c: "#10b981", x: 60, y: 70, w: 52 },
+            { t: "AI", c: "#f59e0b", x: 122, y: 70, w: 38 },
+            { t: "Tokens", c: "#ec4899", x: 170, y: 70, w: 75 }
+          ];
+
+          tokens.forEach(tok => {
+            ctx.fillStyle = tok.c + "33";
+            ctx.strokeStyle = tok.c;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(tok.x, tok.y - 18, tok.w, 36, 6);
+            ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 12px 'Fira Code', monospace";
+            ctx.fillText(tok.t, tok.x + 8, tok.y + 4);
+          });
+
+          laserX = (laserX + 2) % (labCanvas.width + 40);
+          ctx.strokeStyle = "#c084fc";
+          ctx.shadowColor = "#a855f7";
+          ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.moveTo(laserX - 20, 15);
+          ctx.lineTo(laserX - 20, labCanvas.height - 15);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          requestAnimationFrame(animLab);
+        }
+        animLab();
+      }
+
+      // 3. EN vs ZH Canvas Thumbnail
+      const cmpCanvas = document.getElementById('thumb-canvas-cmp');
+      if (cmpCanvas) {
+        const ctx = cmpCanvas.getContext('2d');
+        cmpCanvas.width = cmpCanvas.offsetWidth || 300;
+        cmpCanvas.height = cmpCanvas.offsetHeight || 180;
+
+        function animCmp() {
+          if (currentTab !== 'games') return requestAnimationFrame(animCmp);
+          ctx.clearRect(0, 0, cmpCanvas.width, cmpCanvas.height);
+
+          ctx.fillStyle = "#94a3b8";
+          ctx.font = "10px sans-serif";
+          ctx.fillText("English: 1 Token = ~4 Chars", 20, 35);
+          
+          ctx.fillStyle = "#6366f133";
+          ctx.strokeStyle = "#6366f1";
+          ctx.beginPath();
+          ctx.roundRect(20, 45, 120, 28, 6);
+          ctx.fill(); ctx.stroke();
+          ctx.fillStyle = "#a5b4fc";
+          ctx.font = "bold 12px monospace";
+          ctx.fillText("H e l l o", 48, 63);
+
+          ctx.fillStyle = "#94a3b8";
+          ctx.font = "10px sans-serif";
+          ctx.fillText("Chinese: 1 Token = 1 Char", 20, 105);
+
+          const zhChars = ["你", "好", "世", "界"];
+          zhChars.forEach((ch, idx) => {
+            const colors = ["#10b981", "#f59e0b", "#ec4899", "#38bdf8"];
+            ctx.fillStyle = colors[idx] + "33";
+            ctx.strokeStyle = colors[idx];
+            ctx.beginPath();
+            ctx.roundRect(20 + idx * 38, 115, 30, 28, 6);
+            ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 12px sans-serif";
+            ctx.fillText(ch, 28 + idx * 38, 133);
+          });
+
+          requestAnimationFrame(animCmp);
+        }
+        animCmp();
+      }
+
+      // 4. Context Overflow Thumbnail
+      const ctxCanvas = document.getElementById('thumb-canvas-ctx');
+      if (ctxCanvas) {
+        const ctx = ctxCanvas.getContext('2d');
+        ctxCanvas.width = ctxCanvas.offsetWidth || 300;
+        ctxCanvas.height = ctxCanvas.offsetHeight || 180;
+        let fillHeight = 30;
+        let dir = 1;
+
+        function animCtx() {
+          if (currentTab !== 'games') return requestAnimationFrame(animCtx);
+          ctx.clearRect(0, 0, ctxCanvas.width, ctxCanvas.height);
+
+          ctx.strokeStyle = "#f59e0b";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(60, 25, 180, 115);
+
+          fillHeight += 0.35 * dir;
+          if (fillHeight > 95 || fillHeight < 15) dir *= -1;
+
+          const fillY = 140 - fillHeight;
+          const grad = ctx.createLinearGradient(0, 140, 0, 25);
+          grad.addColorStop(0, '#10b981');
+          grad.addColorStop(0.6, '#f59e0b');
+          grad.addColorStop(1, '#ef4444');
+
+          ctx.fillStyle = grad;
+          ctx.fillRect(62, fillY, 176, fillHeight);
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 11px monospace";
+          ctx.fillText(`Tokens: ${Math.round((fillHeight / 100) * 2000)} / 2000`, 85, 85);
+
+          requestAnimationFrame(animCtx);
+        }
+        animCtx();
+      }
+
+      // 5. Cost Optimizer Thumbnail
+      const costCanvas = document.getElementById('thumb-canvas-cost');
+      if (costCanvas) {
+        const ctx = costCanvas.getContext('2d');
+        costCanvas.width = costCanvas.offsetWidth || 300;
+        costCanvas.height = costCanvas.offsetHeight || 180;
+
+        function animCost() {
+          if (currentTab !== 'games') return requestAnimationFrame(animCost);
+          ctx.clearRect(0, 0, costCanvas.width, costCanvas.height);
+
+          ctx.strokeStyle = "#a855f7"; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.moveTo(30, 130);
+          ctx.bezierCurveTo(90, 120, 150, 60, 260, 40); ctx.stroke();
+
+          ctx.strokeStyle = "#10b981"; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.moveTo(30, 130);
+          ctx.bezierCurveTo(90, 125, 150, 110, 260, 95); ctx.stroke();
+
+          ctx.fillStyle = "#a855f7"; ctx.fillText("Raw Context ($$$)", 130, 35);
+          ctx.fillStyle = "#10b981"; ctx.fillText("RAG Caching ($)", 140, 115);
+
+          requestAnimationFrame(animCost);
+        }
+        animCost();
+      }
+
+      // 6. Token Quiz Thumbnail
+      const quizCanvas = document.getElementById('thumb-canvas-quiz');
+      if (quizCanvas) {
+        const ctx = quizCanvas.getContext('2d');
+        quizCanvas.width = quizCanvas.offsetWidth || 300;
+        quizCanvas.height = quizCanvas.offsetHeight || 180;
+        let angle = 0;
+
+        function animQuiz() {
+          if (currentTab !== 'games') return requestAnimationFrame(animQuiz);
+          ctx.clearRect(0, 0, quizCanvas.width, quizCanvas.height);
+          angle += 0.02;
+
+          ctx.save();
+          ctx.translate(quizCanvas.width / 2, quizCanvas.height / 2);
+          ctx.rotate(angle);
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.4)";
+          ctx.lineWidth = 2;
+          for (let i = 0; i < 8; i++) {
+            ctx.rotate(Math.PI / 4);
+            ctx.strokeRect(-25, -25, 50, 50);
+          }
+          ctx.restore();
+
+          ctx.fillStyle = "#fbbf24";
+          ctx.font = "30px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("🏆", quizCanvas.width / 2, quizCanvas.height / 2 + 10);
+
+          requestAnimationFrame(animQuiz);
+        }
+        animQuiz();
+      }
+    }
+
+    function simulateBPETokenizer(text) {
+      if (!text) return [];
+
+      const tokens = [];
+      let tokenCounter = 1000;
+      const pattern = /[\u4e00-\u9fa5]|\s+|[a-zA-Z]+|\d+|[^\s\w\u4e00-\u9fa5]/g;
+      let match;
+
+      while ((match = pattern.exec(text)) !== null) {
+        const slice = match[0];
+
+        if (/[\u4e00-\u9fa5]/.test(slice)) {
+          tokens.push({
+            id: tokenCounter++,
+            text: slice,
+            type: 'chinese',
+            bytes: new TextEncoder().encode(slice).length
+          });
+        } else if (/[a-zA-Z]{7,}/.test(slice) && slice.length > 7) {
+          const mid = Math.floor(slice.length / 2);
+          const part1 = slice.substring(0, mid);
+          const part2 = slice.substring(mid);
+
+          tokens.push({ id: tokenCounter++, text: part1, type: 'subword', bytes: part1.length });
+          tokens.push({ id: tokenCounter++, text: part2, type: 'subword', bytes: part2.length });
+        } else {
+          tokens.push({
+            id: tokenCounter++,
+            text: slice,
+            type: /\s+/.test(slice) ? 'space' : /[^\s\w]/.test(slice) ? 'punct' : 'word',
+            bytes: new TextEncoder().encode(slice).length
+          });
+        }
+      }
+
+      return tokens;
+    }
+
+    function setSampleText(type) {
+      const input = document.getElementById('lab-input');
+      if (type === 'simple') {
+        input.value = "I love AI! Understanding tokens is super easy with TokenCraft.";
+      } else if (type === 'code') {
+        input.value = "function calculateTokens(text) {\n  return text.split(' ').length;\n}";
+      } else if (type === 'multilingual') {
+        input.value = "LLMs compute tokens. 機器學習模型處理文字與 Token。";
+      }
+      processLabText();
+    }
+
+    function processLabText() {
+      const inputVal = document.getElementById('lab-input').value;
+      const tokens = simulateBPETokenizer(inputVal);
+      const container = document.getElementById('token-visualization-container');
+      container.innerHTML = '';
+
+      tokens.forEach((tok, idx) => {
+        const chip = document.createElement('div');
+        const colorClass = `token-c${idx % 6}`;
+        chip.className = `token-chip ${colorClass}`;
+        
+        const displayVal = tok.text.replace(/ /g, '␣').replace(/\n/g, '↵\n');
+        chip.innerText = displayVal;
+        chip.title = `Token ID: ${tok.id} | Type: ${tok.type} | Bytes: ${tok.bytes}B`;
+        container.appendChild(chip);
+      });
+
+      const totalTokens = tokens.length;
+      const totalChars = inputVal.length;
+      const ratio = totalTokens > 0 ? (totalChars / totalTokens).toFixed(2) : '0.0';
+      const estCost = (totalTokens * 0.000002).toFixed(5);
+
+      document.getElementById('lab-token-count-badge').innerText = `${totalTokens} Tokens`;
+      document.getElementById('metric-tokens').innerText = totalTokens;
+      document.getElementById('metric-chars').innerText = totalChars;
+      document.getElementById('metric-ratio').innerText = ratio;
+      document.getElementById('metric-cost').innerText = `$${estCost}`;
+    }
+
+    function runComparison() {
+      const enText = document.getElementById('en-cmp-input').value;
+      const zhText = document.getElementById('zh-cmp-input').value;
+
+      const enTokens = simulateBPETokenizer(enText);
+      const zhTokens = simulateBPETokenizer(zhText);
+
+      const enOut = document.getElementById('en-cmp-output');
+      enOut.innerHTML = '';
+      enTokens.forEach((t, i) => {
+        const span = document.createElement('span');
+        span.className = `token-chip token-c${i % 6}`;
+        span.innerText = t.text.replace(/ /g, '␣');
+        enOut.appendChild(span);
+      });
+
+      const zhOut = document.getElementById('zh-cmp-output');
+      zhOut.innerHTML = '';
+      zhTokens.forEach((t, i) => {
+        const span = document.createElement('span');
+        span.className = `token-chip token-c${i % 6}`;
+        span.innerText = t.text;
+        zhOut.appendChild(span);
+      });
+
+      document.getElementById('en-char-val').innerText = enText.length;
+      document.getElementById('en-token-val').innerText = enTokens.length;
+      document.getElementById('en-eff-val').innerText = (enTokens.length ? (enText.length / enTokens.length).toFixed(1) : 0) + ' c/t';
+
+      document.getElementById('zh-char-val').innerText = zhText.length;
+      document.getElementById('zh-token-val').innerText = zhTokens.length;
+      document.getElementById('zh-eff-val').innerText = (zhTokens.length ? (zhText.length / zhTokens.length).toFixed(1) : 0) + ' c/t';
+    }
+
+    let ctxCurrentTokens = 1200;
+    const ctxMaxTokens = 2000;
+    let ctxTurn = 1;
+    let ctxGameInitialized = false;
+
+    function initContextGame() {
+      ctxGameInitialized = true;
+      resetContextGame();
+    }
+
+    function resetContextGame() {
+      ctxCurrentTokens = 800;
+      ctxTurn = 1;
+      updateContextUI();
+      const list = document.getElementById('ctx-memory-list');
+      list.innerHTML = `
+        <div class="p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-300">
+          <span class="text-indigo-400 font-bold">[System]:</span> Initialized Memory Context (800 Tokens)
+        </div>
+      `;
+    }
+
+    function updateContextUI() {
+      const percentage = Math.min(100, Math.round((ctxCurrentTokens / ctxMaxTokens) * 100));
+      const bar = document.getElementById('ctx-progress-bar');
+      bar.style.width = `${percentage}%`;
+
+      document.getElementById('ctx-used-text').innerText = `${ctxCurrentTokens} / ${ctxMaxTokens} Tokens (${percentage}%)`;
+      document.getElementById('ctx-round-counter').innerText = `Round ${ctxTurn} / 10`;
+      document.getElementById('ctx-score-turns').innerText = ctxTurn;
+
+      const status = document.getElementById('ctx-score-status');
+      if (percentage < 70) {
+        status.innerText = 'SAFE';
+        status.className = 'text-emerald-400 font-bold text-sm';
+      } else if (percentage < 90) {
+        status.innerText = 'WARNING';
+        status.className = 'text-amber-400 font-bold text-sm';
+      } else {
+        status.innerText = 'CRITICAL';
+        status.className = 'text-red-400 font-bold text-sm animate-pulse';
+      }
+    }
+
+    function applyContextAction(type) {
+      if (ctxCurrentTokens >= ctxMaxTokens) {
+        showModal("Context Overflowed!", "Game Over", "Your context memory buffer crashed! Click Reset to try again.");
+        return;
+      }
+
+      const list = document.getElementById('ctx-memory-list');
+
+      if (type === 'summarize') {
+        ctxCurrentTokens = Math.max(200, ctxCurrentTokens - 500);
+        list.innerHTML += `<div class="p-2 bg-indigo-950/50 border border-indigo-500/30 rounded-lg text-indigo-300">&check; Summarized past context (-500 Tokens)</div>`;
+      } else if (type === 'truncate') {
+        ctxCurrentTokens = Math.max(200, ctxCurrentTokens - 300);
+        list.innerHTML += `<div class="p-2 bg-amber-950/50 border border-amber-500/30 rounded-lg text-amber-300">&check; Truncated oldest messages (-300 Tokens)</div>`;
+      } else if (type === 'rag') {
+        ctxCurrentTokens = Math.max(200, ctxCurrentTokens - 400);
+        list.innerHTML += `<div class="p-2 bg-emerald-950/50 border border-emerald-500/30 rounded-lg text-emerald-300">&check; Replaced raw text with RAG Chunks (-400 Tokens)</div>`;
+      } else if (type === 'next') {
+        const incoming = Math.floor(Math.random() * 350) + 250;
+        ctxCurrentTokens += incoming;
+        ctxTurn++;
+        list.innerHTML += `<div class="p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-300">&plus; User Prompt & Response (+${incoming} Tokens)</div>`;
+
+        if (ctxCurrentTokens >= ctxMaxTokens) {
+          updateContextUI();
+          showModal("Context Overflow Error!", "System Crash", "Memory buffer exceeded 2,000 Tokens! Try again with active prompt compression.");
+          return;
+        }
+
+        if (ctxTurn >= 10) {
+          addXP(100, "Successfully survived 10 rounds of Context Memory Management!");
+        }
+      }
+
+      list.scrollTop = list.scrollHeight;
+      updateContextUI();
+    }
+
+    let selectedModel = 'flagship';
+    let selectedStrategy = 'raw';
+
+    function selectCostModel(model) {
+      selectedModel = model;
+      document.querySelectorAll('.cost-model-btn').forEach(b => b.classList.replace('border-indigo-500', 'border-slate-800'));
+      document.getElementById(`btn-model-${model}`).classList.replace('border-slate-800', 'border-indigo-500');
+      calculateCostMetrics();
+    }
+
+    function selectCostStrategy(strat) {
+      selectedStrategy = strat;
+      document.querySelectorAll('.cost-strat-btn').forEach(b => b.classList.replace('border-indigo-500', 'border-slate-800'));
+      document.getElementById(`btn-strat-${strat}`).classList.replace('border-slate-800', 'border-indigo-500');
+      calculateCostMetrics();
+    }
+
+    function calculateCostMetrics() {
+      const vol = parseInt(document.getElementById('cost-vol-slider').value);
+      document.getElementById('cost-vol-text').innerText = `${vol.toLocaleString()} reqs/mo`;
+
+      let costPerMInput = 2.50;
+      let costPerMOutput = 10.00;
+
+      if (selectedModel === 'balanced') {
+        costPerMInput = 3.00; costPerMOutput = 15.00;
+      } else if (selectedModel === 'fast') {
+        costPerMInput = 0.075; costPerMOutput = 0.30;
+      }
+
+      const tokensPerReq = selectedStrategy === 'raw' ? 4000 : 800;
+      const totalInputTokens = vol * tokensPerReq;
+      const totalOutputTokens = vol * 300;
+
+      const monthlyCost = ((totalInputTokens / 1000000) * costPerMInput) + ((totalOutputTokens / 1000000) * costPerMOutput);
+
+      document.getElementById('cost-total-val').innerText = `$${monthlyCost.toFixed(2)}`;
+
+      const badge = document.getElementById('cost-status-badge');
+      if (monthlyCost <= 150) {
+        badge.innerText = 'PASSED (<= $150)';
+        badge.className = 'px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      } else {
+        badge.innerText = 'OVER BUDGET';
+        badge.className = 'px-2 py-0.5 rounded font-bold bg-red-500/20 text-red-300 border border-red-500/30';
+      }
+    }
+
+    function claimCostReward() {
+      const cost = parseFloat(document.getElementById('cost-total-val').innerText.replace('$', ''));
+      if (cost <= 150) {
+        addXP(50, "Architecture strategy kept monthly API costs under $150!");
+      } else {
+        showModal("Over Budget!", "Optimization Needed", "Your monthly cost exceeds $150. Switch to Gemini Flash tier or enable RAG Caching!");
+      }
+    }
+
+    const quizQuestions = [
+      {
+        question: "1. What is a 'Token' in Large Language Models?",
+        options: [
+          "A whole English word strictly",
+          "The atomic subword slice, character, or punctuation processed by the AI",
+          "A password key for API authentication",
+          "A vector database index file"
+        ],
+        answer: 1,
+        explanation: "Tokens are subwords, characters, or punctuation slices created by tokenizers like BPE."
+      },
+      {
+        question: "2. Why does Chinese text take more tokens than English for similar content?",
+        options: [
+          "Chinese grammar is unparseable",
+          "BPE vocabularies are trained mostly on English datasets, forcing non-Latin characters into multi-byte pieces",
+          "Chinese characters cannot be converted to numbers",
+          "LLM models reject non-English alphabets"
+        ],
+        answer: 1,
+        explanation: "Since token vocabularies prioritize frequent English words, non-Latin characters often fragment into UTF-8 byte tokens."
+      },
+      {
+        question: "3. What occurs when a query exceeds an LLM's Context Window limit?",
+        options: [
+          "The AI runs 10x faster",
+          "The model crashes or drops earlier historical conversation details",
+          "The API request cost becomes $0",
+          "The prompt translates to Spanish"
+        ],
+        answer: 1,
+        explanation: "Exceeding context capacity forces truncation or produces a Context Overflow HTTP error."
+      },
+      {
+        question: "4. Roughly how many characters equal 1 English token in standard LLMs?",
+        options: [
+          "100 characters",
+          "About 3.5 to 4 characters (~0.75 words)",
+          "Exactly 1 character",
+          "10 whole words"
+        ],
+        answer: 1,
+        explanation: "On average, 1 English token corresponds to ~4 characters or 0.75 words."
+      },
+      {
+        question: "5. Which technique reduces prompt token count for large enterprise document search?",
+        options: [
+          "Sending the full document on every request",
+          "Retrieval-Augmented Generation (RAG) and Prompt Caching",
+          "Increasing text font size",
+          "Capitalizing every letter"
+        ],
+        answer: 1,
+        explanation: "RAG extracts only relevant snippet chunks, drastically reducing input token payload."
+      }
+    ];
+
+    let quizCurrentIndex = 0;
+    let quizScore = 0;
+
+    function renderQuizQuestion() {
+      const q = quizQuestions[quizCurrentIndex];
+      document.getElementById('quiz-question-num').innerText = `Question ${quizCurrentIndex + 1} of ${quizQuestions.length}`;
+      document.getElementById('quiz-title').innerText = q.question;
+
+      const container = document.getElementById('quiz-options-container');
+      container.innerHTML = '';
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = "w-full p-3.5 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-left text-xs text-slate-200 font-medium transition flex items-center justify-between shadow";
+        btn.innerHTML = `<span>${opt}</span> <i class="fa-regular fa-circle text-slate-600"></i>`;
+        btn.onclick = () => checkQuizAnswer(idx);
+        container.appendChild(btn);
+      });
+
+      document.getElementById('quiz-feedback-box').className = 'hidden';
+      document.getElementById('btn-quiz-next').className = 'hidden';
+    }
+
+    function checkQuizAnswer(selectedIdx) {
+      const q = quizQuestions[quizCurrentIndex];
+      const feedback = document.getElementById('quiz-feedback-box');
+      feedback.classList.remove('hidden');
+
+      if (selectedIdx === q.answer) {
+        quizScore++;
+        playAudioTone(880, 'sine', 0.2);
+        feedback.className = "p-4 rounded-xl text-xs bg-emerald-950/60 border border-emerald-500/40 text-emerald-300";
+        feedback.innerHTML = `<b>&check; Correct!</b> ${q.explanation}`;
+      } else {
+        playAudioTone(220, 'sawtooth', 0.2);
+        feedback.className = "p-4 rounded-xl text-xs bg-red-950/60 border border-red-500/40 text-red-300";
+        feedback.innerHTML = `<b>&cross; Incorrect.</b> ${q.explanation}`;
+      }
+
+      document.getElementById('quiz-score-display').innerHTML = `Score: <span class="text-amber-400 font-bold">${quizScore} / ${quizQuestions.length}</span>`;
+      
+      const nextBtn = document.getElementById('btn-quiz-next');
+      nextBtn.classList.remove('hidden');
+      nextBtn.innerText = quizCurrentIndex === quizQuestions.length - 1 ? "Complete Quiz & Claim XP" : "Next Question \u2192";
+    }
+
+    function nextQuizQuestion() {
+      quizCurrentIndex++;
+      if (quizCurrentIndex < quizQuestions.length) {
+        renderQuizQuestion();
+      } else {
+        addXP(150, `Completed the Token Master Quiz scoring ${quizScore}/${quizQuestions.length}!`);
+        quizCurrentIndex = 0;
+        quizScore = 0;
+        switchTab('games');
+      }
+    }
+
+    window.onload = function() {
+      renderCardThumbnails();
+      processLabText();
+      runComparison();
+    };
+  </script>
+</body>
+</html>
